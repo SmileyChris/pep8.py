@@ -620,6 +620,8 @@ class Checker:
         self.blank_lines = 0
         self.tokens = []
         parens = 0
+        line_commented = False
+        blank_lines_before_comment = 0
         for token in tokenize.generate_tokens(self.readline_check_physical):
             # print tokenize.tok_name[token[0]], repr(token)
             self.tokens.append(token)
@@ -632,16 +634,26 @@ class Checker:
                 self.check_logical()
                 self.blank_lines = 0
                 self.tokens = []
+                if blank_lines_before_comment:
+                    blank_lines_before_comment = 0
             if token_type == tokenize.NL and not parens:
-                self.blank_lines += 1
+                # Don't count a completely commented line as a blank line.
+                if line_commented:
+                    line_commented = False
+                    blank_lines_before_comment = self.blank_lines
+                else:
+                    # Don't count the first empty line after a completely
+                    # commented if there were empty lines before the comment
+                    # too.
+                    if blank_lines_before_comment:
+                        blank_lines_before_comment = 0
+                    else:
+                        self.blank_lines += 1
                 self.tokens = []
             if token_type == tokenize.COMMENT:
                 source_line = token[4]
                 token_start = token[2][1]
-                # Two blank lines + comments should be okay
-                if (source_line[:token_start].strip() == '' and
-                    self.blank_lines < 2):
-                        self.blank_lines = 0
+                line_commented = source_line[:token_start].strip() == ''
         return self.file_errors
 
     def report_error(self, line_number, offset, text, check):
