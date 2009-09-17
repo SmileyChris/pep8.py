@@ -647,7 +647,7 @@ class Checker:
                     # commented if there were empty lines before the comment
                     # too.
                     if blank_lines_before_comment:
-                        blank_lines_before_comment = 0
+                        blank_lines_before_comment -= 1
                     else:
                         self.blank_lines += 1
                 self.tokens = []
