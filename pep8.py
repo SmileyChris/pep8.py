@@ -250,10 +250,13 @@ def missing_whitespace(logical_line):
     line = logical_line
     for index in range(len(line) - 1):
         char = line[index]
-        if char in ',;:' and line[index + 1] != ' ':
+        next_char = line[index + 1]
+        if char in ',;:' and next_char != ' ':
             before = line[:index]
             if char == ':' and before.count('[') > before.count(']'):
                 continue # Slice syntax, no space required
+            if next_char == ')' and re.search(r'\([^,]+$', before):
+                continue # tuple singlet, no space required
             return index, "E231 missing whitespace after '%s'" % char
 
 
