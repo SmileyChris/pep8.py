@@ -252,7 +252,7 @@ def missing_whitespace(logical_line):
     for index in range(len(line) - 1):
         char = line[index]
         next_char = line[index + 1]
-        if char in ',;:' and next_char != ' ':
+        if char in ',;:' and next_char not in (' ', '\t'):
             before = line[:index]
             if char == ':' and before.count('[') > before.count(']'):
                 continue # Slice syntax, no space required
@@ -838,6 +838,7 @@ def process_options(arglist=None):
     options, args = parser.parse_args(arglist)
     if options.testsuite:
         args.append(options.testsuite)
+        options.repeat = True
     if len(args) == 0:
         parser.error('input not specified')
     options.prog = os.path.basename(sys.argv[0])
