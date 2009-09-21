@@ -95,7 +95,7 @@ from fnmatch import fnmatch
 __version__ = '0.2.0'
 __revision__ = '$Rev$'
 
-default_exclude = '.svn,CVS,*.pyc,*.pyo'
+default_exclude = '.svn,CVS,.bzr,.hg,.git'
 
 indent_match = re.compile(r'([ \t]*)').match
 raise_comma_match = re.compile(r'raise\s+\w+\s*(,)').match
@@ -692,7 +692,7 @@ def input_file(filename):
     """
     Run all checks on a Python source file.
     """
-    if excluded(filename) or not filename_match(filename):
+    if excluded(filename):
         return {}
     if options.verbose:
         message('checking ' + filename)
@@ -720,7 +720,8 @@ def input_dir(dirname):
                 dirs.remove(subdir)
         files.sort()
         for filename in files:
-            input_file(os.path.join(root, filename))
+            if filename_match(filename):
+                input_file(os.path.join(root, filename))
 
 
 def excluded(filename):
@@ -816,9 +817,13 @@ def process_options(arglist=None):
     parser.add_option('-q', '--quiet', default=0, action='count',
                       help="report only file names, or nothing with -qq")
     parser.add_option('--exclude', metavar='patterns', default=default_exclude,
-                      help="skip matches (default %s)" % default_exclude)
-    parser.add_option('--filename', metavar='patterns',
-                      help="only check matching files (e.g. *.py)")
+                      help="exclude files or directories which match these "
+                        "comma separated patterns (default: %s)" %
+                        default_exclude)
+    parser.add_option('--filename', metavar='patterns', default='*.py',
+                      help="when parsing directories, only check filenames "
+                        "matching these comma separated patterns (default: "
+                        "*.py)")
     parser.add_option('--ignore', metavar='errors', default='',
                       help="skip errors and warnings (e.g. E4,W)")
     parser.add_option('--repeat', action='store_true',
