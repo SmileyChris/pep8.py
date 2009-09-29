@@ -192,8 +192,9 @@ def maximum_line_length(physical_line):
 ##############################################################################
 
 
-def blank_lines(logical_line, blank_lines, indent_level, line_number,
-                previous_logical, previous_indent_level):
+def blank_lines(logical_line, blank_lines, blank_lines_before_comment,
+                indent_level, line_number, previous_logical,
+                previous_indent_level):
     """
     Separate top-level function and class definitions with two blank lines.
 
@@ -209,16 +210,22 @@ def blank_lines(logical_line, blank_lines, indent_level, line_number,
         return # Don't expect blank lines before the first line
     if previous_logical.startswith('@'):
         return # Don't expect blank lines after function decorator
-    if indent_level < previous_indent_level:
-        if (logical_line.startswith('def ') or
+    max_blank_lines = max(blank_lines, blank_lines_before_comment)
+    if indent_level < previous_indent_level and (
+            logical_line.startswith('def ') or
             logical_line.startswith('class ') or
             logical_line.startswith('@')):
-            if indent_level > 0 and blank_lines != 1:
-                return 0, "E301 expected 1 blank line, found %d" % blank_lines
-            if indent_level == 0 and blank_lines != 2:
-                return 0, "E302 expected 2 blank lines, found %d" % blank_lines
-    if blank_lines > 2:
-        return 0, "E303 too many blank lines (%d)" % blank_lines
+        if indent_level > 0:
+            if max_blank_lines != 1:
+                return 0, ("E301 expected 1 blank line, found %d" %
+                           max_blank_lines)
+        else:
+            if 2 not in (max_blank_lines,
+                         blank_lines + blank_lines_before_comment):
+                return 0, ("E302 expected 2 blank lines, found %d" %
+                           max_blank_lines)
+    if max_blank_lines > 2:
+        return 0, "E303 too many blank lines (%d)" % max_blank_lines
 
 
 def extraneous_whitespace(logical_line):
@@ -618,7 +625,7 @@ class Checker:
         self.indent_char = None
         self.indent_level = 0
         self.previous_logical = ''
-        self.blank_lines = 0
+        self.blank_lines = self.blank_lines_before_comment = 0
         self.tokens = []
         parens = 0
         line_commented = False
@@ -634,22 +641,17 @@ class Checker:
             if token_type == tokenize.NEWLINE and not parens:
                 self.check_logical()
                 self.blank_lines = 0
+                self.blank_lines_before_comment = 0
                 self.tokens = []
-                if blank_lines_before_comment:
-                    blank_lines_before_comment = 0
             if token_type == tokenize.NL and not parens:
                 # Don't count a completely commented line as a blank line.
                 if line_commented:
                     line_commented = False
-                    blank_lines_before_comment = self.blank_lines
+                    if self.blank_lines:
+                        self.blank_lines_before_comment = self.blank_lines
+                        self.blank_lines = 0
                 else:
-                    # Don't count the first empty line after a completely
-                    # commented if there were empty lines before the comment
-                    # too.
-                    if blank_lines_before_comment:
-                        blank_lines_before_comment -= 1
-                    else:
-                        self.blank_lines += 1
+                    self.blank_lines += 1
                 self.tokens = []
             if token_type == tokenize.COMMENT:
                 source_line = token[4]
