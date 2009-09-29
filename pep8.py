@@ -208,9 +208,9 @@ def blank_lines(logical_line, blank_lines, blank_lines_before_comment,
     """
     if line_number == 1:
         return # Don't expect blank lines before the first line
-    if previous_logical.startswith('@'):
-        return # Don't expect blank lines after function decorator
     max_blank_lines = max(blank_lines, blank_lines_before_comment)
+    if previous_logical.startswith('@') and max_blank_lines:
+        return 0, "E304 blank lines found after function decorator"
     if indent_level < previous_indent_level and (
             logical_line.startswith('def ') or
             logical_line.startswith('class ') or
