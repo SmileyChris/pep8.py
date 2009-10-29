@@ -17,3 +17,11 @@ class Y:
 
     def b():
         pass
+
+
+class Z:
+
+    @decorator
+    def a():
+        pass
+ 
